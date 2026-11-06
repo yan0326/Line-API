@@ -1,98 +1,185 @@
-\chapter{認識 LaTeX：從排版問題開始}
+\chapter{LINE Messaging API 註冊申請與實作教學}
 
-本章先從數位排版的需求出發，認識 TeX 的起源、LaTeX 所扮演的角色，並釐清初學者常遇到的幾個疑問。讀完本章後，你不必背誦歷史細節；更重要的是理解「內容」與「排版規則」如何分工，以及什麼情況適合使用 LaTeX。
+LINE Messaging API 是 LINE 平台提供的一套讓開發者能透過程式與使用者互動的通訊能力。它可用於客服機器人、訂閱通知、會員訊息推送、活動提醒與自動回覆等場景，對企業與開發者而言是快速建立聊天服務的重要入口。本文說明 LINE Messaging API 的註冊方式、Channel 設定、Webhook 配置、權限控管與實作流程，並透過程式碼範例展示如何接收及回覆使用者訊息。
 
-\section{一套為精確排版而生的系統}
+\section{LINE Messaging API 簡介與應用場景}
 
-\subsection{Knuth、排版與 TeX}
+LINE Messaging API 基於 LINE 官方平台提供的身份驗證與訊息轉送機制，開發者可將 LINE 作為一個客服、通知與互動通道。其核心能力包括接收來自使用者的文字訊息、圖片、位置、貼圖與其他事件，並在後端程式中分析事件內容後回覆適當的訊息。這種結構讓企業可以將 LINE 視為一種低成本、高可用的通道，直接接軌既有後端服務。
 
-TeX 的誕生和一本大型計算機科學著作的排版經驗有關。美國計算機科學家 Donald E. Knuth 在整理《The Art of Computer Programming》（常縮寫為 TAOCP）時，對當時印刷成品的數學公式與版面品質不滿意，於是著手設計一套能細緻控制字距、行距與符號位置的排版系統。TeX 的開發始於 1970 年代末，後續版本逐步成熟，成為學術出版與技術文件的重要工具。
+在實務上，LINE Messaging API 常見的應用場景如下：
+\begin{itemize}[leftmargin=2em]
+    \item 客服機器人：處理常見問答與自動回覆。
+    \item 會員通知：發送訂單狀態、付款通知與活動提醒。
+    \item 會員互動：搭配抽獎、問卷或購物導購流程。
+    \item 內部作業流程：將 LINE 當成客服審核或提醒通道。
+    \item 綜合數位服務：結合 CRM、資料庫與第三方 API。
+\end{itemize}
 
-TeX 的特色不只是「把文字變成 PDF」。它會依據文字、字型與版面規則計算斷行和頁面配置；數學公式、表格或特殊符號也能按照一致的規則排版。作者可以描述要呈現的內容與結構，再由排版系統處理大量細節。
+一個典型的 LINE Messaging API 流程包含三個主要角色：使用者、LINE 平台與開發者伺服器。使用者在聊天中發送訊息，LINE 先將此事件轉送到 Channel 的 Webhook，然後後端伺服器透過 Access Token 驗證並回覆訊息。此後流程可再延伸至資料庫查詢、外部 API 呼叫以及事件記錄。這種架構使系統具備高彈性且可擴充。
 
-TAOCP 是 Knuth 長期撰寫的演算法與程式設計著作。它在這段歷史中扮演的是催化劑：大型、含大量數學內容的書籍，讓精確排版問題變得格外明顯。學習 LaTeX 並不需要先讀完 TAOCP，也不需要先成為數學或計算機專家。
+\begin{figure}[H]
+\centering
+\fbox{\begin{minipage}{0.82\textwidth}
+\centering
+使用者\quad $\rightarrow$ \quad LINE Platform\quad $\rightarrow$ \quad Webhook Server\quad $\rightarrow$ \quad 回覆訊息
+\end{minipage}}
+\caption{LINE Messaging API 基本訊息流程}
+\end{figure}
 
-\subsection{從精密控制到方便寫作}
+\section{LINE Developers 帳號註冊申請與 Channel 建立流程}
 
-TeX 本身提供非常有彈性的低階控制能力；若每篇文章都直接從細節開始指定，寫作會變得繁瑣。LaTeX 建立在 TeX 之上，提供較高階的文件結構與命令，例如章節、標題、清單、交互參照與參考文獻。作者可以寫出「這是章節標題」或「這裡引用一筆文獻」，再由文件類別和套件決定整體呈現方式。
+想要使用 LINE Messaging API，第一步是註冊 LINE Developers 帳號，並建立對應的 Messaging API Channel。開發者需先登入 LINE 官方開發者平台，在右上角進入「Create a provider」建立供應商主體，再建立 Channel。Channel 是 LINE 對外提供服務的主要單位，所有的 Webhook、權限、Token 及消息流程都會綁定在此 Channel 上。
 
-可以用分工來理解兩者：TeX 提供排版引擎和底層能力，LaTeX 則提供一套常用的文件規則，讓作者較容易組織內容。這並不表示排版細節永遠不能調整，而是先有合理的一致預設，需要時再逐步修改。
-
-\section{LaTeX 文件如何變成成品}
-
-LaTeX 文件通常以純文字的 \texttt{.tex} 檔保存。編輯器負責撰寫原始碼，XeLaTeX 等編譯程式讀取原始碼、套用排版規則，最後產生 PDF。編譯過程也可能建立輔助檔案，用來記錄目錄、頁碼或交互參照等資訊。
-
-\begin{center}
-原始碼（.tex）\quad $\longrightarrow$\quad XeLaTeX 編譯\quad $\longrightarrow$\quad PDF
-\end{center}
-
-這種工作方式和直接在頁面上拖曳文字方塊不同。原始碼中可以清楚看出標題層級、段落、公式及引用關係；同一份內容也能套用不同的文件類別或樣式。文件越長、結構越明確，這種分離通常越有幫助。
-
-以下是一個精簡的繁體中文文件骨架。它使用 XeLaTeX，並以 xeCJK 設定中文排版；字型名稱必須是目前電腦已安裝、且 XeLaTeX 能找到的字型。
-
-\begin{verbatim}
-\documentclass[a4paper,12pt]{article}
-\usepackage{fontspec}
-\usepackage{xeCJK}
-\setCJKmainfont{SimSun}
-\setmainfont{Times New Roman}
-\XeTeXlinebreaklocale "zh"
-\XeTeXlinebreakskip = 0pt plus 1pt
-
-\title{第一份中文文件}
-\author{作者姓名}
-\date{\today}
-
-\begin{document}
-\maketitle
-這是一段繁體中文。
-\end{document}
-\end{verbatim}
-
-這個例子展示的是文件的基本組成，不是唯一寫法。不同課程、期刊或出版單位可能會使用不同的文件類別與套件；只要掌握內容結構，就能再依需求調整外觀。
-
-\section{初學者常見的幾個疑問}
-
-\subsection{一定要使用特定作業系統嗎？}
-
-不需要。TeX 發行版與 LaTeX 編輯工具可在 Windows、macOS 與 Linux 等平台使用，也有線上編輯與編譯服務。不同平台的安裝步驟、字型名稱和可用套件可能不同，但文件原始碼通常可以在平台之間移動。若文件指定了特定字型，其他電腦也必須有該字型，或由作者改用可用的替代字型。
-
-\subsection{LaTeX 已經過時了嗎？}
-
-不能只用「新」或「舊」判斷工具是否合適。LaTeX 仍持續維護，並廣泛用於數學、科學、工程及技術文件，也能用於書籍、講義和一般長篇文件。另一方面，簡短且以視覺拖曳為主的文件，使用一般文書軟體可能更直接。選擇工具時，應考慮文件結構、公式需求、協作方式、出版規格與維護成本。
-
-\subsection{LaTeX 是所見即所得嗎？}
-
-傳統工作流程通常是先編輯原始碼，再編譯並檢視 PDF，因此不是每個字元一輸入就立刻呈現在最終頁面上。這種方式常被概括為「所想即所得」：作者描述文件的結構和內容，排版系統依規則產生結果。現代編輯器可以同時顯示預覽，讓修改與檢查更方便；不過預覽並不改變「編輯來源、編譯成品」的基本流程。
-
-\subsection{它很難學，而且只能排數學嗎？}
-
-LaTeX 有自己的命令語法，因此剛開始需要熟悉反斜線、括號、環境與編譯錯誤訊息。初期不必追求一次學會所有套件；從標題、段落、清單、公式和引用等常見需求開始，逐步累積即可。它以數學排版聞名，但並不限於數學文章，也可用於報告、講義、書籍與結構化技術文件。
-
-\section{本課程從哪裡開始}
-
-本課程會先練習建立文件、編譯與檢查 PDF，接著逐步加入標題、段落、清單、表格、圖片與公式。遇到中文時，除了原始碼內容，也要注意編譯引擎、字型是否安裝，以及中文斷行設定。這些因素會共同影響最終輸出。
-
-初學階段可以先建立三個習慣：
-\begin{enumerate}
-    \item 將內容與格式命令分清楚，讓文件結構容易閱讀。
-    \item 每次完成一小段修改就編譯，依錯誤訊息定位問題。
-    \item 檢查 PDF 成品，而不只確認原始碼看起來合理。
+實際註冊與建立 Channel 的流程通常如下：
+\begin{enumerate}[leftmargin=2em]
+    \item 進入 LINE Developers 官方網站，使用 LINE 帳號完成登入。
+    \item 點選「Create a provider」建立專案供應商名稱，並依照需求命名專案。
+    \item 在 provider 內建立 Message API Channel，選擇適合的用途與預設語言。
+    \item 確認 Channel 適用的地區與服務範圍，完成建立流程。
+    \item 進入 Channel 設定頁面，確認基本資訊、權限與 Webhook 設定。
 \end{enumerate}
 
-\subsection*{本章回顧}
+建立完成後，LINE 平台會為 Channel 自動產生一組重要資訊，包括 Channel Secret、Channel Access Token 與 Webhook URL。這些資訊必須妥善保管，否則可能導致身份被冒用，甚至暴露回覆訊息伺服器的安全風險。對新手而言，最容易忽略的點是「Channel 是功能主體，而 Token 是通行證」。
 
-TeX 回應的是精確排版的需求；LaTeX 則在 TeX 的能力之上提供較方便的文件結構。作者以原始碼描述內容，編譯程式依規則產生 PDF。LaTeX 是否適合某份文件，取決於文件的結構與工作流程，而不是單看它是否以公式排版聞名。
+\begin{table}[H]
+\centering
+\caption{LINE Channel 常用設定項目}
+\begin{tabular}{p{0.26\textwidth} p{0.64\textwidth}}
+\toprule
+項目 & 說明 \\
+\midrule
+Provider & 開發者帳號的組織單位，通常對應一個專案或公司名稱。 \\
+Channel & 訊息服務的核心設定單位，負責管理 Token、Webhook、權限與事件。 \\
+Channel Secret & 用於驗證 LINE 事件來源，屬於機密資訊，請勿直接暴露於前端。 \\
+Channel Access Token & 伺服器端用於呼叫 LINE API 的驗證憑證。 \\
+Webhook URL & 伺服器地址，讓 LINE 將事件通知送達後端應用。 \\
+\bottomrule
+\end{tabular}
+\end{table}
 
-\subsection*{思考與討論}
+\section{Channel Secret 及 Access Token 取得與設定}
 
-\begin{enumerate}
-    \item TeX 與 LaTeX 分別負責什麼？請用自己的話說明兩者的分工。
-    \item 如果一份文件需要大量公式、章節與交互參照，使用 LaTeX 可能有哪些好處？
-    \item 在另一台電腦編譯含中文的文件時，除了原始碼之外，還應確認哪些環境條件？
+Channel Secret 與 Channel Access Token 是 Line Messaging API 的核心驗證資訊。Channel Secret 是由 LINE 平台提供的秘密字串，作為 Channel 的識別鍵；Access Token 則是伺服器向 LINE API 請求消息推送、回覆與多媒體功能時所需的權限憑證。兩者都需要妥善保存，建議存放於環境變數或安全設定檔中，而不是寫死在程式碼中。
+
+在 LINE Developers 控制台中，使用者可在 Channel 設定頁面找到 Channel Secret；Access Token 則可在「Messaging API」頁面中產生或重新發行。通常在建立新專案時，建議先完成下列事項：
+\begin{itemize}[leftmargin=2em]
+    \item 啟用 Messaging API 功能。
+    \item 儲存 Channel Secret 至系統環境變數。
+    \item 建立長期有效或可輪換的 Access Token。
+    \item 設定伺服器白名單與 HTTPS 網址。
+\end{itemize}
+
+若要讓伺服器支援 LINE 訊息發送，程式碼中通常會使用環境變數來讀取這些資訊，避免直接儲存在原始碼版本控制中。以下是一個安全的設定檔範例：
+
+\begin{lstlisting}[caption={環境變數設定範例}]
+{
+  "channel_secret": "xxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+  "channel_access_token": "xxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+  "webhook_url": "https://example.ngrok-free.app/callback",
+  "server_port": 5000
+}
+\end{lstlisting}
+
+設定好這些資訊後，後端服務便可依照使用者事件進行判斷與回覆，這也是 LINE 機器人實作的基礎。另需注意，Access Token 可能因為安全事件、密鑰輪換或偶發錯誤而失效，因此系統架構中建議保留重新申請的機制，避免依賴單一憑證。
+
+\section{Webhook 的設定與測試方式}
+
+Webhook 是 LINE Messaging API 中最關鍵的事件介面之一。當使用者傳送訊息、加入好友、關注官方帳號或觸發貼圖、定位事件時，LINE 會將相關事件依照設定的 URL 轉送到後端服務。這使後端系統可以即時處理訊息內容，並做出適當回覆。
+
+Webhook 的設定步驟大致如下：
+\begin{enumerate}[leftmargin=2em]
+    \item 在 LINE Developer Console 中啟用 Webhook。
+    \item 設定 callback URL，例如 \texttt{https://example.com/callback}。
+    \item 選擇需要接收的事件類型，例如 text、follow、unfollow、message。 
+    \item 以 ngrok 或公開伺服器將本地服務暴露到網路供 LINE 呼叫。
+    \item 使用測試工具發送事件，確認 LINE 能正常轉送資料。
 \end{enumerate}
+
+在開發過程中，ngrok 是最常用的網路轉送工具。它能讓開發者在本機環境中啟動 Flask 或 Node.js 伺服器，並將本地端點映射到可公開存取的 HTTPS URL。這對 LINE Webhook 的驗證與除錯非常實用，特別是在初期快速驗證消息流程時更為方便。
+
+\begin{figure}[H]
+\centering
+\fbox{\begin{minipage}{0.8\textwidth}
+\centering
+本機伺服器\quad $\rightarrow$ \quad ngrok\quad $\rightarrow$ \quad LINE Platform\quad $\rightarrow$ \quad Webhook Handler
+\end{minipage}}
+\caption{用於 Webhook 測試的 ngrok 轉送架構}
+\end{figure}
+
+一般須先確認 HTTPS 協定是否可用，因為 LINE 對 Webhook 要求較高的安全標準；公開 URL 若沒有有效的證書，通常會導致訊息無法正常傳遞。若需在正式環境使用，企業通常會部署於雲端平台、容器服務或負載平衡器後端，並保留穩定的 URL 與安全策略。
+
+\section{範例程式：接收並回覆 LINE 訊息}
+
+以下範例以 Python 為例，使用 Flask 伺服器接收 LINE Webhook 事件，並在收到文字訊息時回覆同樣內容。此範例能直接作為原型開發的樣板，適合初學者快速理解 LINE Messaging API 的事件流程。
+
+\begin{lstlisting}[language=Python,caption={Python 範例：LINE Webhook 接收與回覆訊息}]
+from flask import Flask, request, abort
+from linebot import LineBotApi, WebhookHandler
+from linebot.exceptions import InvalidSignatureError
+from linebot.models import MessageEvent, TextMessage, TextSendMessage
+
+app = Flask(__name__)
+
+LINE_CHANNEL_ACCESS_TOKEN = "YOUR_CHANNEL_ACCESS_TOKEN"
+LINE_CHANNEL_SECRET = "YOUR_CHANNEL_SECRET"
+
+line_bot_api = LineBotApi(LINE_CHANNEL_ACCESS_TOKEN)
+handler = WebhookHandler(LINE_CHANNEL_SECRET)
+
+@app.route("/callback", methods=["POST"])
+def callback():
+    signature = request.headers.get("X-Line-Signature", "")
+    body = request.get_data(as_text=True)
+
+    try:
+        handler.handle(body, signature)
+    except InvalidSignatureError:
+        abort(400)
+
+    return "OK"
+
+@handler.add(MessageEvent, message=TextMessage)
+def handle_message(event):
+    msg = event.message.text
+    reply = f"你剛才傳了：{msg}"
+    line_bot_api.reply_message(event.reply_token, TextSendMessage(text=reply))
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=5000)
+\end{lstlisting}
+
+這段程式碼的核心邏輯包括：
+\begin{enumerate}[leftmargin=2em]
+    \item 接收 LINE 傳來的 HTTP 請求。
+    \item 利用 Signature 驗證請求是否合法。
+    \item 判斷事件類型是否為文字訊息。
+    \item 使用 \texttt{reply	extunderscore message} 回覆使用者內容。
+\end{enumerate}
+
+如果要擴充為完整客服機器人，開發者可在 \texttt{handle\_message} 內加入關鍵字分析、訂單查詢、資料庫讀取、第三方 API 呼叫等邏輯。此設計有助於將簡單的回覆能力轉變為商業流程自動化平台。
+
+\section{實務部署與安全建議}
+
+在真正部署 LINE Messaging API 時，安全性與可維護性同樣重要。首先，所有 Channel Secret 與 Access Token 應以環境變數或機密管理工具保存，避免直接置入版本控制系統。其次，Webhook URL 應由 HTTPS 服務承接，並應遵守 LINE 官方提供的通訊格式與事件定義。第三，若系統需支援大量使用者，建議在後端加入錯誤寫入、訊息重試、速率限制與 log 記錄機制。
+
+此外，開發者在設計服務時必須注意以下幾點：
+\begin{itemize}[leftmargin=2em]
+    \item 不要在前端頁面顯示任何 Secret 或 Access Token。
+    \item 對機器人回覆加上必要的錯誤處理，避免服務中斷時造成訊息遺失。
+    \item 使用 HTTPS、權限控管與日誌紀錄來保障應用系統穩定性。
+    \item 若系統需要處理大量訊息，建議使用排程器、訊息佇列與背景任務。
+\end{itemize}
+
+這些措施不只提升安全性，也讓後續維運與功能擴充更加容易。LINE Messaging API 雖然具備強大彈性，但如果沒有合理的驗證與部署方式，系統在實際營運中也容易因小錯誤而出現訊息錯失與服務異常。
+
+\section{總結}
+
+LINE Messaging API 是一個兼具簡潔與擴充性的整合平台，適合用於自動化客服、通知推播、活動互動與數位轉型應用。從 LINE Developers 註冊，到創建 Channel、取得 Secret 和 Token，再到設定 Webhook 並撰寫後端程式，都構成了完整的實作流程。
+
+對初學者而言，最重要的是先建立「使用者事件 → Webhook → 後端處理 → 回覆訊息」的完整思維。在此之後，便可以逐步延伸至資料庫查詢、客服自動化、訊息分類與多角色推播等進階功能。透過系統性地理解每個設定項目，開發者將能更快地將想法轉化成可運作的 LINE 服務。
 
 \begin{thebibliography}{9}
-\bibitem{lee2004}
-李果正（Edward G. J. Lee），\textit{大家來學 LATEX}，Version 1.0，2004 年 3 月 8 日。本文僅以該講義作為概念參考，內容與例子另行撰寫。
+\bibitem{line2024} LINE Developers 官方文件，\textit{Messaging API Overview}，2024。
+\bibitem{line2024b} LINE Developers 官方文件，\textit{Webhook and Events}，2024。
+\bibitem{flask2024} Flask 官方文件，\textit{Quickstart}，2024。
 \end{thebibliography}

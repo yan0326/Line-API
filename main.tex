@@ -1,14 +1,55 @@
 % !TEX program = xelatex
-\documentclass[a4paper, 12pt]{report}
+\documentclass[a4paper,12pt]{report}
+\usepackage[left=3cm,right=2.5cm,top=2.5cm,bottom=2.5cm]{geometry}
 \usepackage{fontspec}
 \usepackage{xeCJK}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{multirow}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{caption}
+\usepackage{titlesec}
+\usepackage{enumitem}
+
 \setCJKmainfont[AutoFakeBold=2, AutoFakeSlant=0.2]{標楷體}
-\setCJKmonofont[AutoFakeBold=2, AutoFakeSlant=0.2]{SimSun}
+\setCJKsansfont{微軟正黑體}
+\setCJKmonofont{細明體}
 \setmainfont{Times New Roman}
 \XeTeXlinebreaklocale "zh"
 \XeTeXlinebreakskip = 0pt plus 1pt
 
+\title{LINE Messaging API 註冊申請與實作教學}
+\author{學號：\texttt{0000000000}}
+\date{\today}
+
+\hypersetup{colorlinks=true, linkcolor=blue, urlcolor=blue}
+\definecolor{codebg}{RGB}{245,245,245}
+\lstset{
+  language=Python,
+  basicstyle=\ttfamily\small,
+  numbers=left,
+  numberstyle=\tiny,
+  stepnumber=1,
+  breaklines=true,
+  breakatwhitespace=true,
+  backgroundcolor=\color{codebg},
+  frame=single,
+  rulecolor=\color{black!30},
+  showstringspaces=false,
+  tabsize=4,
+  captionpos=b,
+  keywordstyle=\color{blue},
+  commentstyle=\color{green!40!black},
+  stringstyle=\color{red!60!black}
+}
+
 \renewcommand\contentsname{目錄}
+\renewcommand\listfigurename{圖目錄}
+\renewcommand\listtablename{表目錄}
 \renewcommand\bibname{參考資料}
 \renewcommand\figurename{圖}
 \renewcommand\tablename{表}
@@ -16,18 +57,32 @@
 \renewcommand\thechapter{\arabic{chapter}章}
 \renewcommand\thesection{\arabic{chapter}.\arabic{section}}
 \renewcommand\thesubsection{\thesection.\arabic{subsection}}
+\renewcommand{\thefigure}{\arabic{figure}}
+\renewcommand{\thetable}{\arabic{table}}
+\renewcommand{\lstlistingname}{程式碼}
+\renewcommand{\lstlistlistingname}{程式目錄}
+
 \makeatletter
 \renewcommand*{\l@chapter}[2]{\@dottedtocline{0}{0em}{3em}{#1}{#2}}
 \renewcommand*{\l@section}[2]{\@dottedtocline{1}{1.5em}{3em}{#1}{#2}}
 \renewcommand*{\l@subsection}[2]{\@dottedtocline{2}{3.8em}{4em}{#1}{#2}}
 \makeatother
 
-\title{從 TeX 到 LaTeX：理解數位排版的起點}
-\author{LaTeX 教學講義}
-\date{\today}
-
 \begin{document}
 \maketitle
 \tableofcontents
+\listoffigures
+\listoftables
+\lstlistoflistings
+\clearpage
+
 \input{chap1/chap1.tex}
+
+\chapter{本文件 LaTeX 原始碼}
+\section{主文件原始碼}
+\lstinputlisting[language={[LaTeX]TeX},caption={main.tex 主文件原始碼},label={lst:maintex}]{main.tex}
+
+\section{章節原始碼}
+\lstinputlisting[language={[LaTeX]TeX},caption={chap1/chap1.tex 章節原始碼},label={lst:chap1source}]{chap1/chap1.tex}
+
 \end{document}

@@ -12,6 +12,7 @@
 *.lof
 *.lot
 *.run.xml
+*.pdf
 
 # Local generated files
 main.aux
